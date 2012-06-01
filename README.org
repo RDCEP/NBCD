@@ -1,0 +1,90 @@
+
+* National Biomass and Carbon Dataset (NBCD)
+
+** Dataset Description
+
+From [[http://www.whrc.org/mapping/nbcd/index.html][the NBCD site]] at the [[http://www.whrc.org/][Woods Hole Research Center]]:
+
+#+begin_quote
+Scientists at the Woods Hole Research Center have produced a
+high-resolution “National Biomass and Carbon Dataset for the year
+2000” (NBCD2000), the first ever spatially explicit inventory of its
+kind. The dataset was produced as part of a project funded under
+NASA’s Terrestrial Ecology Program with additional support from the
+Landscape Fire and Resource Management Planning Tools Project
+(LANDFIRE). The project has generated a high-resolution (30 m),
+year-2000 baseline estimate of basal area-weighted canopy height,
+aboveground live dry biomass, and standing carbon stock for the
+conterminous United States.
+#+end_quote
+
+See their web site for more information.
+
+
+*** Registration for Data Access
+
+Users must register for access to the NBCD data [[http://www.whrc.org/mapping/nbcd/nbcd_reg.html][here]].  For the data
+download script to work you must save the credentials emailed to you
+in a .wgetrc file within the working directory like so:
+
+#+begin_example
+user = foo
+password = bar
+#+end_example
+
+This is done to respect the registration process and to not distribute
+credentials with this source code repository.  Please do not commit
+the .wgetrc file to revision control or otherwise inject any NBCD
+credentials into the source code.  To reinforce this there is an entry
+for this .wgetrc file in the .gitignore file.
+
+
+*** Data Access and Usage
+
+According to the [[http://www.whrc.org/mapping/nbcd/nbcd_fairuse.html][NBCD Fair Data Use Policy]]:
+
+#+begin_quote
+The data provided on this site are freely available and were furnished
+by individual scientists who encourage their use. Please kindly inform
+in writing (or e-mail) the NBCD Team of how you are using the data and
+of any publication plans. If not yet published, please reference the
+source of the data, as a citation and in the acknowledgments (See
+below for dataset citation). The NBCD Team will tell you if they feel
+they should be acknowledged or offered participation as authors. We
+assume that an agreement on such matters will be reached before
+publishing and/or use of th! e data for publication. If your work
+directly competes with an ongoing investigation, the NBCD Team may ask
+that they have the opportunity to submit a manuscript before you
+submit one that uses their data. When publishing, please acknowledge
+the agency that supported the research (NASA Terrestrial Ecology
+Program). We kindly request that those publishing papers using any
+data from NBCD to supply reprints to the NBCD Team.
+#+end_quote
+
+
+*** Dataset Citation
+
+Kellndorfer, J., Walker, W., LaPoint, L. , Bishop, J., Cormier, T.,
+Fiske, G., Kirsch, K., "The National Biomass and Carbon Dataset ­ A
+hectare-scale dataset of vegetation height, aboveground biomass and
+carbon stock of the conterminous United States." Data published by The
+Woods Hole Research Center, 2011. http://www.whrc.org/nbcd/
+
+
+** Codeset Description
+
+This repository can be found [[https://github.com/RDCEP/NBCD][here]] on [[https://github.com/][GitHub]].  It is an example of a
+Blox component.  Blox is a modular source code management, data
+management and scientific workflow concept under development at the
+University of Chicago's Computation Institute.  Blox currently relies
+on the Git distributed version control system and GNU Make, but could
+conceivably be implemented using other source code management systems
+and dependency tracking utilities.
+
+
+** Copyrights
+
+The codeset was developed by Neil Best at the University of Chicago’s
+Computation Institute in support of ongoing research at the Center for
+Robust Decision Making on Climate and Energy Policy (RDECEP).
+Attribution is appreciated.

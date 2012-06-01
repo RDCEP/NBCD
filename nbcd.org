@@ -1,0 +1,52 @@
+#+TITLE:     nbcd.org
+#+AUTHOR:    Neil Best
+#+EMAIL:     nbest@ci.uchicago.edu
+#+DATE:      2012-05-31 Thu
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE:  en
+#+OPTIONS:   H:3 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:   
+#+LINK_HOME: 
+#+XSLT:
+
+#+PROPERTY: session *R* 
+
+* Download the data
+
+#+begin_src R :tangle tangle/download.R
+  library( stringr)
+  library( plyr)
+  library( doMC)
+  
+  registerDoMC()
+  
+  Sys.setenv( WGETRC= "./.wgetrc")
+  
+  url <- "http://atlas.whrc.org/NBCD2000/mapping_zone_shapefile.zip"
+  download.file( url, basename( url), method= "wget", extra= "-nv")
+  
+  http <- "http://atlas.whrc.org/NBCD2000"
+  mz <- str_pad( c( 1:36, "37a", "37b", 38:66), 2, pad= "0")
+  fia <- sprintf( "NBCD2000_MZ%s/NBCD_MZ%s_FIA_ALD_biomass.tgz", mz, mz) 
+  url <- paste( http, fia, sep= "/")
+  
+  wgetWithPath <-
+    function( url,
+             dest= str_replace( url, "http://", ""),
+             method= "wget",
+             ...) {
+      dir.create( dirname( dest),
+                 recursive= TRUE,
+                 showWarnings= FALSE)
+      download.file( url, dest, method, ...)
+    }
+  
+  res <- llply( url, wgetWithPath, extra= "-nv -nc", .parallel= TRUE)
+  
+  
+#+end_src
