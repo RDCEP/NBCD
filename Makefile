@@ -2,7 +2,12 @@ vpath %.R scripts
 
 # export PATH := $(PATH):scripts
 
-nbcdStates = AL AR AZ CA CO CT DC DE East_TX FL GA IA ID IL IN KS KY LA MA MD ME MI MN MO MS MT NC ND NE NH NJ NM NV NY OH OK OR PA RI SC SD TN UT VA VT WA WestTX WI WV WY
+nbcdStates := AL AR AZ CA CO CT DC DE East_TX 
+nbcdStates += FL GA IA ID IL IN KS KY LA MA MD 
+nbcdStates += ME MI MN MO MS MT NC ND NE NH NJ 
+nbcdStates += NM NV NY OH OK OR PA RI SC SD TN 
+nbcdStates += UT VA VT WA WestTX WI WV WY
+
 stateZips = $(patsubst %,%.zip,$(nbcdStates))
 stateTifs = $(patsubst %,%.tif,$(nbcdStates))
 
@@ -17,7 +22,7 @@ $(stateZips):
 	wget -nv -c -x ftp://atlas.whrc.org/gfiske/US/FIA_biomass/$@
 
 $(stateTifs): %.tif: %.zip
-	find atlas.whrc.org/gfiske/US/FIA_biomass/$< -execdir unzip -n \{\} \;
+	find atlas.whrc.org/gfiske/US/FIA_biomass/ -name $< -execdir unzip -n \{\} \;
 
 $(nbcdStates): %: %.tif
 
