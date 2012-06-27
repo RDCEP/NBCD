@@ -1,1 +1,10 @@
 .wgetrc
+*~
+\#*#
+.#*
+atlas.whrc.org/
+scratch/
+shp/
+.*DS_Store
+*.zip
+.png*

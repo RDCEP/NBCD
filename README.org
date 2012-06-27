@@ -82,6 +82,17 @@ conceivably be implemented using other source code management systems
 and dependency tracking utilities.
 
 
+*** Git Hooks
+
+This repository relies on a Git pre-commit hook to keep the source
+code embedded in =nbcd.org= in sync with the code in the =scripts/=
+directory.  Currently this hook is not active when the repository is cloned.  A simple solution is to use symbolic links:
+
+#+begin_example
+ln -fs ../../git_hooks/pre-commit .git/hooks/pre-commit
+#+end_example
+
+
 ** Copyrights
 
 The codeset was developed by Neil Best at the University of Chicago’s

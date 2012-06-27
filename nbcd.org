@@ -29,9 +29,10 @@
   
   url <- "http://atlas.whrc.org/NBCD2000/mapping_zone_shapefile.zip"
   download.file( url, basename( url), method= "wget", extra= "-nv")
+  unzip( basename( url), exdir= "shp")
   
   http <- "http://atlas.whrc.org/NBCD2000"
-  mz <- str_pad( c( 1:36, "37a", "37b", 38:66), 2, pad= "0")
+  mz <- str_pad( c( 1:10, 12:36, "37a", "37b", 38:66), 2, pad= "0")
   fia <- sprintf( "NBCD2000_MZ%s/NBCD_MZ%s_FIA_ALD_biomass.tgz", mz, mz) 
   url <- paste( http, fia, sep= "/")
   
@@ -48,5 +49,47 @@
   
   res <- llply( url, wgetWithPath, extra= "-nv -nc", .parallel= TRUE)
   
+  
+#+end_src
+
+
+
+
+* Assess the overlap/difference issue
+
+The NBCD data does not define a "no data"/null value rather uses zero
+as a background value.  There is no way to distinguish a value of zero
+within the boundaries of a given mapping zone (MZ) from a background
+value beyond its boundaries where there is either a water body or a
+neighboring MZ.  The data for a given MZ extends beyond the boundary
+of the corresponding polygon in the NBCD shapefile.  Therefore on
+either side of a given MZ boundary there is a buffer zone where carbon
+inventory values are given in multiple data files.  We have noticed
+that the values are not equal within that zone of overlap, so what
+follows is an attempt to quantify these differences.
+
+#+begin_src R :session *R:2*
+  
+  library( raster)
+  
+  mz1 <- raster( "atlas.whrc.org/NBCD2000/NBCD2000_MZ01/NBCD_MZ01_FIA_ALD_biomass.tif")
+  mz8 <- raster( "atlas.whrc.org/NBCD2000/NBCD2000_MZ08/NBCD_MZ08_FIA_ALD_biomass.tif")
+  
+  intExt <- intersect( extent( mz1), extent( mz8))
+  mz1 <- crop( mz1, intExt)
+  mz8 <- crop( mz8, intExt)
+  
+  nbcdDiffFunc <-
+    function( r1, r2) {
+      ifelse( r1 > 0 & r2 > 0, r1 - r2, NA)
+    }
+  
+  nbcdDiff <-
+    overlay(
+      mz1, mz8,
+      fun= nbcdDiffFunc,
+      filename= "nbcdDiff.tif")
+  
+  summary( nbcdDiff)
   
 #+end_src
