@@ -8,8 +8,15 @@ nbcdStates += ME MI MN MO MS MT NC ND NE NH NJ
 nbcdStates += NM NV NY OH OK OR PA RI SC SD TN 
 nbcdStates += UT VA VT WA WestTX WI WV WY
 
-stateZips = $(patsubst %,%.zip,$(nbcdStates))
-stateTifs = $(patsubst %,%.tif,$(nbcdStates))
+statePath := atlas.whrc.org/gfiske/US/FIA_biomass/
+
+stateZips = $(patsubst %,$(statePath)%.zip,$(nbcdStates))
+stateTifs = $(patsubst %,$(statePath)%.tif,$(nbcdStates))
+stateVrts = $(patsubst %,$(statePath)%.vrt,$(nbcdStates))
+
+nlcdProj4 := +proj=aea +lat_1=29.5 +lat_2=45.5 
+nlcdProj4 += +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 
+nlcdProj4 += +no_defs +a=6378137 +rf=298.257222101 +to_meter=1
 
 SCRIPTS = download.R
 
@@ -19,14 +26,30 @@ download: download.R
 	find atlas.whrc.org -name '*.tgz' -execdir tar xzkf '{}' \;
 
 $(stateZips):
-	wget -nv -c -x ftp://atlas.whrc.org/gfiske/US/FIA_biomass/$@
+	wget -nv -c -x ftp://$@
 
 $(stateTifs): %.tif: %.zip
-	find atlas.whrc.org/gfiske/US/FIA_biomass/ -name $< -execdir unzip -n \{\} \;
+	unzip -n -d $(dir $<) $<
+
+#	find atlas.whrc.org/gfiske/US/FIA_biomass/ -name $< -execdir unzip -n \{\} \;
 
 $(nbcdStates): %: %.tif
 
 states: $(nbcdStates)
+
+$(stateVrts): %.vrt: %.tif
+	gdalwarp -overwrite -t_srs '$(nlcdProj4)' \
+	  -of VRT -srcnodata 65536 -dstnodata 65536 \
+	  $< $@
+
+#	find atlas.whrc.org/gfiske/US/FIA_biomass/ -name $< \
+#	  -execdir gdalwarp -overwrite -t_srs '$(nlcdProj4)' -of VRT -srcnodata 65536 -dstnodata 65536 \{\} $@ \;
+
+vrts: $(stateVrts)
+
+nbcd.vrt: $(stateTifs)
+#	gdalwarp -overwrite -t_srs '$(nlcdProj4)' -of VRT -srcnodata 65536 -dstnodata 65536 $^ $@
+	gdalbuildvrt -overwrite $@ $^
 
 $(SCRIPTS): tangle
 
@@ -42,4 +65,4 @@ clean:
 distclean: clean 
 	find atlas.whrc.org -name '*.zip' -or -name '*.tgz' -delete
 
-.PHONY: download $(nbcdStates) states tangle
+.PHONY: download $(nbcdStates) states vrts tangle
