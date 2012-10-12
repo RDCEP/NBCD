@@ -54,7 +54,7 @@ nbcd.vrt: $(stateTifs)
 $(SCRIPTS): tangle
 
 tangle: nbcd.org
-	emacs --batch --file=nbcd.org -f org-babel-tangle 2>&1 | grep tangle
+	emacs --quick --batch --file=nbcd.org -f org-babel-tangle 2>&1 | grep tangle
 	rsync -arq tangle/ scripts 
 	chmod u+x scripts/*
 
