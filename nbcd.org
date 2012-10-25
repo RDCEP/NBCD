@@ -19,41 +19,55 @@
 * Download the data
 
 #+begin_src R :tangle tangle/download.R
-  library( stringr)
-  library( plyr)
-  library( doMC)
-  
-  registerDoMC()
-  
-  Sys.setenv( WGETRC= "./.wgetrc")
-  
-  url <- "http://atlas.whrc.org/NBCD2000/mapping_zone_shapefile.zip"
-  download.file( url, basename( url), method= "wget", extra= "-nv")
-  unzip( basename( url), exdir= "shp")
-  
-  http <- "http://atlas.whrc.org/NBCD2000"
-  mz <- str_pad( c( 1:10, 12:36, "37a", "37b", 38:66), 2, pad= "0")
-  fia <- sprintf( "NBCD2000_MZ%s/NBCD_MZ%s_FIA_ALD_biomass.tgz", mz, mz) 
-  url <- paste( http, fia, sep= "/")
-  
-  wgetWithPath <-
-    function( url,
-             dest= str_replace( url, "http://", ""),
-             method= "wget",
-             ...) {
-      dir.create( dirname( dest),
-                 recursive= TRUE,
-                 showWarnings= FALSE)
-      download.file( url, dest, method, ...)
+library( stringr)
+library( plyr)
+library( doMC)
+
+registerDoMC()
+
+Sys.setenv( WGETRC= "./.wgetrc")
+
+http <- "http://atlas.whrc.org/NBCD2000"
+
+shp <- "Mapping_Zones/mapping_zone_shapefile.zip"
+
+mz <- str_pad( c( 1:10, 12:36, "37a", "37b", 38:66), 2, pad= "0")
+fia <- sprintf( "NBCD2000_MZ%s/NBCD_MZ%s_FIA_ALD_biomass.tgz", mz, mz) 
+url <- paste( http, c( shp, fia), sep= "/")
+
+wgetWithPath <-
+  function( url,
+           dest= paste( "data",
+             str_replace( url, "http://", ""),
+             sep= "/"),
+           method= "wget",
+           ...) {
+    dir.create( dirname( dest),
+               recursive= TRUE,
+               showWarnings= FALSE)
+    suppressWarnings(
+      download.file( url, dest, method, ...))
+    if( str_detect( dest, "zip$")) {
+      unzip( dest, exdir= dirname( dest))
+    } else {
+      untar( dest, exdir= dirname( dest))
     }
-  
-  res <- llply( url, wgetWithPath, extra= "-nv -nc", .parallel= TRUE)
-  
-  
+  }
+
+res <- llply( url, wgetWithPath, extra= "-nv -nc", .parallel= TRUE)
+
+## baw <- str_replace( url, "FIA_ALD_biomass", "BAW_height")
+
+
+
 #+end_src
 
 
+** TODO Add wget options that check file time stamps on the server
 
+** TODO Unpack the data after downloading
+
+** TODO Download canopy height data
 
 * Assess the overlap/difference issue
 
@@ -93,3 +107,127 @@ follows is an attempt to quantify these differences.
   summary( nbcdDiff)
   
 #+end_src
+
+** TODO Check correspondence of zone shape file to data directories
+
+* Build the GDAL VRT virtual raster
+
+From [[http://gdal.org/gdalbuildvrt.html][the gdalbuildvrt page on gdal.org]]:
+
+#+begin_quote
+If there is some amount of spatial overlapping between files, the
+order may depend on the order they are inserted in the VRT file, but
+this behaviour should not be relied on.
+#+end_quote
+
+
+#+begin_src sh :session :results output 
+gdalfile=$(find data -name "*FIA_ALD_biomass.tif" | sort)
+vrtfile=data/nbcdAldb.vrt
+gdalbuildvrt -overwrite  $vrtfile $gdalfile
+gdalinfo $vrtfile
+#+end_src
+
+#+results:
+#+begin_example
+0...10...20...30...40...50...60...70...80...90...100 - done.
+Driver: VRT/Virtual Raster
+Files: data/nbcdAldb.vrt
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ01/NBCD_MZ01_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ02/NBCD_MZ02_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ03/NBCD_MZ03_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ04/NBCD_MZ04_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ05/NBCD_MZ05_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ06/NBCD_MZ06_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ07/NBCD_MZ07_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ08/NBCD_MZ08_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ09/NBCD_MZ09_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ10/NBCD_MZ10_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ12/NBCD_MZ12_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ13/NBCD_MZ13_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ14/NBCD_MZ14_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ15/NBCD_MZ15_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ16/NBCD_MZ16_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ17/NBCD_MZ17_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ18/NBCD_MZ18_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ19/NBCD_MZ19_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ20/NBCD_MZ20_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ21/NBCD_MZ21_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ22/NBCD_MZ22_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ23/NBCD_MZ23_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ24/NBCD_MZ24_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ25/NBCD_MZ25_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ26/NBCD_MZ26_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ27/NBCD_MZ27_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ28/NBCD_MZ28_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ29/NBCD_MZ29_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ30/NBCD_MZ30_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ31/NBCD_MZ31_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ32/NBCD_MZ32_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ33/NBCD_MZ33_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ34/NBCD_MZ34_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ35/NBCD_MZ35_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ36/NBCD_MZ36_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ37a/NBCD_MZ37a_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ37b/NBCD_MZ37b_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ38/NBCD_MZ38_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ39/NBCD_MZ39_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ40/NBCD_MZ40_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ41/NBCD_MZ41_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ42/NBCD_MZ42_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ43/NBCD_MZ43_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ44/NBCD_MZ44_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ45/NBCD_MZ45_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ46/NBCD_MZ46_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ47/NBCD_MZ47_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ48/NBCD_MZ48_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ49/NBCD_MZ49_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ50/NBCD_MZ50_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ51/NBCD_MZ51_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ52/NBCD_MZ52_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ53/NBCD_MZ53_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ54/NBCD_MZ54_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ55/NBCD_MZ55_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ56/NBCD_MZ56_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ57/NBCD_MZ57_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ58/NBCD_MZ58_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ59/NBCD_MZ59_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ60/NBCD_MZ60_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ61/NBCD_MZ61_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ62/NBCD_MZ62_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ63/NBCD_MZ63_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ64/NBCD_MZ64_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ65/NBCD_MZ65_FIA_ALD_biomass.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ66/NBCD_MZ66_FIA_ALD_biomass.tif
+Size is 154310, 97646
+Coordinate System is:
+PROJCS[" Projection Name = Albers Conical Equal Area Units = meters GeoTIFF Units = meters",
+    GEOGCS["NAD83",
+        DATUM["North_American_Datum_1983",
+            SPHEROID["GRS 1980",6378137,298.2572221010002,
+                AUTHORITY["EPSG","7019"]],
+            AUTHORITY["EPSG","6269"]],
+        PRIMEM["Greenwich",0],
+        UNIT["degree",0.0174532925199433],
+        AUTHORITY["EPSG","4269"]],
+    PROJECTION["Albers_Conic_Equal_Area"],
+    PARAMETER["standard_parallel_1",29.5],
+    PARAMETER["standard_parallel_2",45.5],
+    PARAMETER["latitude_of_center",23],
+    PARAMETER["longitude_of_center",-96],
+    PARAMETER["false_easting",0],
+    PARAMETER["false_northing",0],
+    UNIT["metre",1,
+        AUTHORITY["EPSG","9001"]]]
+Origin = (-2362844.999999999534339,3180555.000000000000000)
+Pixel Size = (29.999999999999993,-30.000000000000000)
+Corner Coordinates:
+Upper Left  (-2362845.000, 3180555.000) (128d 0'24.18"W, 48d 0'22.57"N)
+Lower Left  (-2362845.000,  251175.000) (118d45'26.38"W, 22d41'42.97"N)
+Upper Right ( 2266455.000, 3180555.000) ( 65d12'28.04"W, 48d17'24.04"N)
+Lower Right ( 2266455.000,  251175.000) ( 74d 8'16.72"W, 22d54' 6.28"N)
+Center      (  -48195.000, 1715865.000) ( 96d33'27.56"W, 38d28'19.03"N)
+Band 1 Block=128x128 Type=Int16, ColorInterp=Gray
+  NoData Value=-32768
+#+end_example
+
