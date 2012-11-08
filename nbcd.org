@@ -36,28 +36,50 @@ fia <- sprintf( "NBCD2000_MZ%s/NBCD_MZ%s_FIA_ALD_biomass.tgz", mz, mz)
 url <- paste( http, c( shp, fia), sep= "/")
 
 wgetWithPath <-
-  function( url,
-           dest= paste( "data",
-             str_replace( url, "http://", ""),
-             sep= "/"),
-           method= "wget",
-           ...) {
-    dir.create( dirname( dest),
-               recursive= TRUE,
-               showWarnings= FALSE)
+  function(
+    url,
+    dest= paste( "data",
+      str_replace( url, "http://", ""),
+      sep= "/"),
+    method= "wget",
+    ...) {
+    dir.create(
+      dirname( dest),
+      recursive= TRUE,
+      showWarnings= FALSE)
     suppressWarnings(
-      download.file( url, dest, method, ...))
+      download.file(
+        url= url,
+        dest= dest,
+        method= method,
+        ...))
     if( str_detect( dest, "zip$")) {
-      unzip( dest, exdir= dirname( dest))
+      unzip(
+        dest,
+        exdir= dirname( dest),
+        unzip= paste( getOption("unzip"), "-DD"))
     } else {
-      untar( dest, exdir= dirname( dest))
+      untar(
+        dest,
+        exdir= dirname( dest),
+        extras= "--touch")
     }
+    dest
   }
 
-res <- llply( url, wgetWithPath, extra= "-nv -nc", .parallel= TRUE)
+wgetWithPath(
+  url[2],
+  extra= "--timestamping --directory-prefix=data")
 
-## baw <- str_replace( url, "FIA_ALD_biomass", "BAW_height")
+res <- llply( url, wgetWithPath,
+             extra= "--no-verbose",
+             .parallel= TRUE)
 
+baw <- str_replace( url[ -1], "FIA_ALD_biomass", "BAW_height")
+
+res <- llply( baw, wgetWithPath,
+             extra= "--no-verbose",
+             .parallel= TRUE)
 
 
 #+end_src
@@ -110,7 +132,7 @@ follows is an attempt to quantify these differences.
 
 ** TODO Check correspondence of zone shape file to data directories
 
-* Build the GDAL VRT virtual raster
+* Build the GDAL VRT virtual rasters
 
 From [[http://gdal.org/gdalbuildvrt.html][the gdalbuildvrt page on gdal.org]]:
 
@@ -122,9 +144,9 @@ this behaviour should not be relied on.
 
 
 #+begin_src sh :session :results output 
-gdalfile=$(find data -name "*FIA_ALD_biomass.tif" | sort)
+gdalfiles=$(find data -name "*FIA_ALD_biomass.tif" | sort)
 vrtfile=data/nbcdAldb.vrt
-gdalbuildvrt -overwrite  $vrtfile $gdalfile
+gdalbuildvrt -overwrite  $vrtfile $gdalfiles
 gdalinfo $vrtfile
 #+end_src
 
@@ -219,8 +241,118 @@ PROJCS[" Projection Name = Albers Conical Equal Area Units = meters GeoTIFF Unit
     PARAMETER["false_northing",0],
     UNIT["metre",1,
         AUTHORITY["EPSG","9001"]]]
-Origin = (-2362844.999999999534339,3180555.000000000000000)
-Pixel Size = (29.999999999999993,-30.000000000000000)
+Origin = (-2362844.999985917937011,3180555.000000000000000)
+Pixel Size = (29.999999999997538,-29.999999999996756)
+Corner Coordinates:
+Upper Left  (-2362845.000, 3180555.000) (128d 0'24.18"W, 48d 0'22.57"N)
+Lower Left  (-2362845.000,  251175.000) (118d45'26.38"W, 22d41'42.97"N)
+Upper Right ( 2266455.000, 3180555.000) ( 65d12'28.04"W, 48d17'24.04"N)
+Lower Right ( 2266455.000,  251175.000) ( 74d 8'16.72"W, 22d54' 6.28"N)
+Center      (  -48195.000, 1715865.000) ( 96d33'27.56"W, 38d28'19.03"N)
+Band 1 Block=128x128 Type=Int16, ColorInterp=Gray
+  NoData Value=-32768
+#+end_example
+
+#+begin_src sh :session :results output 
+gdalfiles=$(find data -name "*BAW_height.tif" | sort)
+vrtfile=data/nbcdBawh.vrt
+gdalbuildvrt -overwrite  $vrtfile $gdalfiles
+gdalinfo $vrtfile
+#+end_src
+
+#+results:
+#+begin_example
+0...10...20...30...40...50...60...70...80...90...100 - done.
+Driver: VRT/Virtual Raster
+Files: data/nbcdBawh.vrt
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ01/NBCD_MZ01_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ02/NBCD_MZ02_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ03/NBCD_MZ03_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ04/NBCD_MZ04_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ05/NBCD_MZ05_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ06/NBCD_MZ06_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ07/NBCD_MZ07_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ08/NBCD_MZ08_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ09/NBCD_MZ09_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ10/NBCD_MZ10_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ12/NBCD_MZ12_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ13/NBCD_MZ13_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ14/NBCD_MZ14_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ15/NBCD_MZ15_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ16/NBCD_MZ16_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ17/NBCD_MZ17_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ18/NBCD_MZ18_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ19/NBCD_MZ19_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ20/NBCD_MZ20_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ21/NBCD_MZ21_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ22/NBCD_MZ22_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ23/NBCD_MZ23_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ24/NBCD_MZ24_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ25/NBCD_MZ25_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ26/NBCD_MZ26_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ27/NBCD_MZ27_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ28/NBCD_MZ28_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ29/NBCD_MZ29_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ30/NBCD_MZ30_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ31/NBCD_MZ31_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ32/NBCD_MZ32_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ33/NBCD_MZ33_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ34/NBCD_MZ34_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ35/NBCD_MZ35_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ36/NBCD_MZ36_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ37a/NBCD_MZ37a_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ37b/NBCD_MZ37b_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ38/NBCD_MZ38_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ39/NBCD_MZ39_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ40/NBCD_MZ40_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ41/NBCD_MZ41_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ42/NBCD_MZ42_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ43/NBCD_MZ43_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ44/NBCD_MZ44_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ45/NBCD_MZ45_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ46/NBCD_MZ46_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ47/NBCD_MZ47_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ48/NBCD_MZ48_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ49/NBCD_MZ49_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ50/NBCD_MZ50_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ51/NBCD_MZ51_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ52/NBCD_MZ52_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ53/NBCD_MZ53_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ54/NBCD_MZ54_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ55/NBCD_MZ55_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ56/NBCD_MZ56_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ57/NBCD_MZ57_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ58/NBCD_MZ58_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ59/NBCD_MZ59_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ60/NBCD_MZ60_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ61/NBCD_MZ61_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ62/NBCD_MZ62_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ63/NBCD_MZ63_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ64/NBCD_MZ64_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ65/NBCD_MZ65_BAW_height.tif
+       data/atlas.whrc.org/NBCD2000/NBCD2000_MZ66/NBCD_MZ66_BAW_height.tif
+Size is 154310, 97646
+Coordinate System is:
+PROJCS[" Projection Name = Albers Conical Equal Area Units = meters GeoTIFF Units = meters",
+    GEOGCS["NAD83",
+        DATUM["North_American_Datum_1983",
+            SPHEROID["GRS 1980",6378137,298.2572221010002,
+                AUTHORITY["EPSG","7019"]],
+            AUTHORITY["EPSG","6269"]],
+        PRIMEM["Greenwich",0],
+        UNIT["degree",0.0174532925199433],
+        AUTHORITY["EPSG","4269"]],
+    PROJECTION["Albers_Conic_Equal_Area"],
+    PARAMETER["standard_parallel_1",29.5],
+    PARAMETER["standard_parallel_2",45.5],
+    PARAMETER["latitude_of_center",23],
+    PARAMETER["longitude_of_center",-96],
+    PARAMETER["false_easting",0],
+    PARAMETER["false_northing",0],
+    UNIT["metre",1,
+        AUTHORITY["EPSG","9001"]]]
+Origin = (-2362844.999985917937011,3180555.000000000000000)
+Pixel Size = (29.999999999997538,-29.999999999996756)
 Corner Coordinates:
 Upper Left  (-2362845.000, 3180555.000) (128d 0'24.18"W, 48d 0'22.57"N)
 Lower Left  (-2362845.000,  251175.000) (118d45'26.38"W, 22d41'42.97"N)
