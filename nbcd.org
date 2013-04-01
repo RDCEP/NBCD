@@ -19,79 +19,75 @@
 * Download the data
 
 #+begin_src R :tangle tangle/download.R
-library( stringr)
-library( plyr)
-library( doMC)
-
-registerDoMC()
-
-Sys.setenv( WGETRC= "./.wgetrc")
-
-http <- "http://atlas.whrc.org/NBCD2000"
-
-shp <- "Mapping_Zones/mapping_zone_shapefile.zip"
-
-mz <- str_pad( c( 1:10, 12:36, "37a", "37b", 38:66), 2, pad= "0")
-fia <- sprintf( "NBCD2000_MZ%s/NBCD_MZ%s_FIA_ALD_biomass.tgz", mz, mz) 
-url <- paste( http, c( shp, fia), sep= "/")
-
-wgetWithPath <-
-  function(
-    url,
-    dest= paste( "data",
-      str_replace( url, "http://", ""),
-      sep= "/"),
-    method= "wget",
-    ...) {
-    dir.create(
-      dirname( dest),
-      recursive= TRUE,
-      showWarnings= FALSE)
-    suppressWarnings(
-      download.file(
-        url= url,
-        dest= dest,
-        method= method,
-        ...))
-    if( str_detect( dest, "zip$")) {
-      unzip(
-        dest,
-        exdir= dirname( dest),
-        unzip= paste( getOption("unzip"), "-DD"))
-    } else {
-      untar(
-        dest,
-        exdir= dirname( dest),
-        extras= "--touch")
+  library( stringr)
+  library( plyr)
+  library( doMC)
+  
+  registerDoMC()
+  
+  Sys.setenv( WGETRC= "./.wgetrc")
+  
+  http <- "http://atlas.whrc.org/NBCD2000"
+  
+  shp <- "Mapping_Zones/mapping_zone_shapefile.zip"
+  
+  mz <- str_pad( c( 1:10, 12:36, "37a", "37b", 38:66), 2, pad= "0")
+  fia <- sprintf( "NBCD2000_MZ%s/NBCD_MZ%s_FIA_ALD_biomass.tgz", mz, mz) 
+  url <- paste( http, c( shp, fia), sep= "/")
+  
+  wgetWithPath <-
+    function(
+      url,
+      dest= paste( "data",
+        str_replace( url, "http://", ""),
+        sep= "/"),
+      method= "wget",
+      ...) {
+      dir.create(
+        dirname( dest),
+        recursive= TRUE,
+        showWarnings= FALSE)
+      suppressWarnings(
+        download.file(
+          url= url,
+          dest= dest,
+          method= method,
+          ...))
+      if( str_detect( dest, "zip$")) {
+        unzip(
+          dest,
+          exdir= dirname( dest),
+          unzip= paste( getOption("unzip"), "-DD"))
+      } else {
+        untar(
+          dest,
+          exdir= dirname( dest),
+          extras= "--touch")
+      }
+      dest
     }
-    dest
-  }
-
-wgetWithPath(
-  url[2],
-  extra= "--timestamping --directory-prefix=data")
-
-res <- llply( url, wgetWithPath,
-             extra= "--no-verbose",
-             .parallel= TRUE)
-
-baw <- str_replace( url[ -1], "FIA_ALD_biomass", "BAW_height")
-
-res <- llply( baw, wgetWithPath,
-             extra= "--no-verbose",
-             .parallel= TRUE)
-
-
+  
+  ## res <- llply( url, wgetWithPath,
+  ##              extra= "--no-verbose",
+  ##              .parallel= TRUE)
+  
+  baw <- str_replace( url[ -1], "FIA_ALD_biomass", "BAW_height")
+  
+  res <- llply( c( url, baw), wgetWithPath,
+               extra= "--no-verbose",
+               .parallel= TRUE)
+  
+  
 #+end_src
 
 
-** TODO Add wget options that check file time stamps on the server
+** DONE Add wget options that check file time stamps on the server
 
-** TODO Unpack the data after downloading
+** DONE Unpack the data after downloading
 
-** TODO Download canopy height data
+** DONE Download canopy height data
 
-* Assess the overlap/difference issue
+* Assess the overlap/difference issue				   :noexport:
 
 The NBCD data does not define a "no data"/null value rather uses zero
 as a background value.  There is no way to distinguish a value of zero
@@ -104,7 +100,7 @@ inventory values are given in multiple data files.  We have noticed
 that the values are not equal within that zone of overlap, so what
 follows is an attempt to quantify these differences.
 
-#+begin_src R :session *R:2*
+#+begin_src R :session *R:2* :eval no
   
   library( raster)
   
@@ -132,6 +128,7 @@ follows is an attempt to quantify these differences.
 
 ** TODO Check correspondence of zone shape file to data directories
 
+
 * Build the GDAL VRT virtual rasters
 
 From [[http://gdal.org/gdalbuildvrt.html][the gdalbuildvrt page on gdal.org]]:
@@ -143,7 +140,7 @@ this behaviour should not be relied on.
 #+end_quote
 
 
-#+begin_src sh :session :results output 
+#+begin_src sh :session :results output :tangle tangle/buildVrt.sh
 gdalfiles=$(find data -name "*FIA_ALD_biomass.tif" | sort)
 vrtfile=data/nbcdAldb.vrt
 gdalbuildvrt -overwrite  $vrtfile $gdalfiles
@@ -253,7 +250,7 @@ Band 1 Block=128x128 Type=Int16, ColorInterp=Gray
   NoData Value=-32768
 #+end_example
 
-#+begin_src sh :session :results output 
+#+begin_src sh :session :results output :tangle tangle/buildVrt.sh
 gdalfiles=$(find data -name "*BAW_height.tif" | sort)
 vrtfile=data/nbcdBawh.vrt
 gdalbuildvrt -overwrite  $vrtfile $gdalfiles
