@@ -1,4 +1,3 @@
-
 * National Biomass and Carbon Dataset (NBCD)
 
 ** Dataset Description
@@ -97,5 +96,5 @@ ln -fs ../../git_hooks/pre-commit .git/hooks/pre-commit
 
 The codeset was developed by Neil Best at the University of Chicago’s
 Computation Institute in support of ongoing research at the Center for
-Robust Decision Making on Climate and Energy Policy (RDECEP).
+Robust Decision Making on Climate and Energy Policy (RDCEP).
 Attribution is appreciated.
